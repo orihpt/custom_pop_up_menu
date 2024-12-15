@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+
 import 'platform/platform.dart';
 
 enum PressType {
@@ -16,17 +19,17 @@ enum PreferredPosition {
 class CustomPopupMenuController extends ChangeNotifier {
   bool menuIsShowing = false;
 
-  void showMenu() {
+  FutureOr<void> showMenu() {
     menuIsShowing = true;
     notifyListeners();
   }
 
-  void hideMenu() {
+  FutureOr<void> hideMenu() {
     menuIsShowing = false;
     notifyListeners();
   }
 
-  void toggleMenu() {
+  FutureOr<void> toggleMenu() {
     menuIsShowing = !menuIsShowing;
     notifyListeners();
   }
@@ -137,35 +140,31 @@ class _CustomPopupMenuState extends State<CustomPopupMenu> {
           ),
         );
         return Listener(
-          behavior: widget.enablePassEvent
-              ? HitTestBehavior.translucent
-              : HitTestBehavior.opaque,
-          onPointerDown: (PointerDownEvent event) {
+          behavior: widget.enablePassEvent ? HitTestBehavior.translucent : HitTestBehavior.opaque,
+          onPointerDown: (PointerDownEvent event) async {
             Offset offset = event.localPosition;
             // If tap position in menu
-            if (_menuRect.contains(
-                Offset(offset.dx - widget.horizontalMargin, offset.dy))) {
+            if (_menuRect.contains(Offset(offset.dx - widget.horizontalMargin, offset.dy))) {
               return;
             }
-            _controller?.hideMenu();
+            await _controller?.hideMenu();
             // When [enablePassEvent] works and we tap the [child] to [hideMenu],
             // but the passed event would trigger [showMenu] again.
             // So, we use time threshold to solve this bug.
             _canResponse = false;
-            Future.delayed(Duration(milliseconds: 300))
-                .then((_) => _canResponse = true);
+            Future.delayed(Duration(milliseconds: 300)).then((_) => _canResponse = true);
           },
           child: widget.barrierColor == Colors.transparent
               ? menu
               : Container(
                   color: widget.barrierColor,
                   child: menu,
-                ),
+                ).animate().fadeIn(),
         );
       },
     );
     if (_overlayEntry != null) {
-      Overlay.of(context)!.insert(_overlayEntry!);
+      Overlay.of(context).insert(_overlayEntry!);
     }
   }
 
@@ -195,8 +194,7 @@ class _CustomPopupMenuState extends State<CustomPopupMenu> {
     WidgetsBinding.instance.addPostFrameCallback((call) {
       if (mounted) {
         _childBox = context.findRenderObject() as RenderBox?;
-        _parentBox =
-            Overlay.of(context)?.context.findRenderObject() as RenderBox?;
+        _parentBox = Overlay.of(context).context.findRenderObject() as RenderBox?;
       }
     });
   }
@@ -315,8 +313,7 @@ class _MenuLayoutDelegate extends MultiChildLayoutDelegate {
     } else if (anchorCenterX + contentSize.width / 2 > size.width) {
       menuPosition = isTop ? _MenuPosition.topRight : _MenuPosition.bottomRight;
     } else {
-      menuPosition =
-          isTop ? _MenuPosition.topCenter : _MenuPosition.bottomCenter;
+      menuPosition = isTop ? _MenuPosition.topCenter : _MenuPosition.bottomCenter;
     }
 
     switch (menuPosition) {
@@ -331,16 +328,14 @@ class _MenuLayoutDelegate extends MultiChildLayoutDelegate {
         );
         break;
       case _MenuPosition.bottomLeft:
-        arrowOffset = Offset(anchorCenterX - arrowSize.width / 2,
-            anchorBottomY + verticalMargin);
+        arrowOffset = Offset(anchorCenterX - arrowSize.width / 2, anchorBottomY + verticalMargin);
         contentOffset = Offset(
           0,
           anchorBottomY + verticalMargin + arrowSize.height,
         );
         break;
       case _MenuPosition.bottomRight:
-        arrowOffset = Offset(anchorCenterX - arrowSize.width / 2,
-            anchorBottomY + verticalMargin);
+        arrowOffset = Offset(anchorCenterX - arrowSize.width / 2, anchorBottomY + verticalMargin);
         contentOffset = Offset(
           size.width - contentSize.width,
           anchorBottomY + verticalMargin + arrowSize.height,
@@ -395,17 +390,13 @@ class _MenuLayoutDelegate extends MultiChildLayoutDelegate {
     if (hasChild(_MenuLayoutId.arrow)) {
       positionChild(
         _MenuLayoutId.arrow,
-        isBottom
-            ? Offset(arrowOffset.dx, arrowOffset.dy + 0.1)
-            : Offset(-100, 0),
+        isBottom ? Offset(arrowOffset.dx, arrowOffset.dy + 0.1) : Offset(-100, 0),
       );
     }
     if (hasChild(_MenuLayoutId.downArrow)) {
       positionChild(
         _MenuLayoutId.downArrow,
-        !isBottom
-            ? Offset(arrowOffset.dx, arrowOffset.dy - 0.1)
-            : Offset(-100, 0),
+        !isBottom ? Offset(arrowOffset.dx, arrowOffset.dy - 0.1) : Offset(-100, 0),
       );
     }
   }
